@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const prospects = await prisma.prospect.findMany({
       where: {
-        userId: session.user.id,
+        ownerId: session.user.id,
       },
       include: {
         _count: {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 });
     }
 
-    const { name, email, phone } = await req.json();
+    const { name, contact } = await req.json();
 
     if (!name) {
       return NextResponse.json(
@@ -60,9 +60,8 @@ export async function POST(req: NextRequest) {
     const prospect = await prisma.prospect.create({
       data: {
         name,
-        email: email || null,
-        phone: phone || null,
-        userId: session.user.id,
+        contact: contact || null,
+        ownerId: session.user.id,
         phase: 1,
         intimacyScore: 0,
         readinessScore: 0,

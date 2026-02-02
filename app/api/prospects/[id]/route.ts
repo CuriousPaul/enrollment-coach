@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET: Prospect 상세 정보
@@ -18,7 +18,7 @@ export async function GET(
     const prospect = await prisma.prospect.findFirst({
       where: {
         id: params.id,
-        ownerId: session.user.id,
+        userId: session.user.id,
       },
       include: {
         insights: {
@@ -65,7 +65,7 @@ export async function PUT(
     const prospect = await prisma.prospect.findFirst({
       where: {
         id: params.id,
-        ownerId: session.user.id,
+        userId: session.user.id,
       },
     });
 
@@ -113,7 +113,7 @@ export async function DELETE(
     const prospect = await prisma.prospect.findFirst({
       where: {
         id: params.id,
-        ownerId: session.user.id,
+        userId: session.user.id,
       },
     });
 
