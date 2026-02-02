@@ -1,0 +1,86 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+
+// GET: 내 Prospect 목록 가져오기
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 });
+    }
+
+    const prospects = await prisma.prospect.findMany({
+      where: {
+        ownerId: session.user.id,
+      },
+      include: {
+        _count: {
+          select: {
+            conversations: true,
+            insights: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return NextResponse.json({ prospects });
+  } catch (error) {
+    console.error("Get prospects error:", error);
+    return NextResponse.json(
+      { error: "Prospect 목록을 가져오는 중 오류가 발생했습니다" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST: 새 Prospect 추가
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 });
+    }
+
+    const { name, contact } = await req.json();
+
+    if (!name) {
+      return NextResponse.json(
+        { error: "이름은 필수 입력 항목입니다" },
+        { status: 400 }
+      );
+    }
+
+    const prospect = await prisma.prospect.create({
+      data: {
+        name,
+        contact: contact || null,
+        ownerId: session.user.id,
+        phase: 1,
+        intimacyScore: 0,
+        readinessScore: 0,
+        status: "active",
+      },
+    });
+
+    return NextResponse.json(
+      {
+        message: "Prospect가 추가되었습니다",
+        prospect,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Create prospect error:", error);
+    return NextResponse.json(
+      { error: "Prospect 추가 중 오류가 발생했습니다" },
+      { status: 500 }
+    );
+  }
+}
